@@ -18,6 +18,10 @@ app.use(
 );
 app.use(cookieParser());
 app.use(express.json());
+app.get("/", (req, res) => {
+
+  res.send("You are Welcome")
+})
 
 app.use("/api/auth", authRoutes);
 app.use("/api/meetings", meetingRoutes);
