@@ -12,7 +12,6 @@ connectDB();
 const app = express();
 app.use(
   cors({
-    origin: "https://crude-client.vercel.app/",
     credentials: true,
   })
 );
