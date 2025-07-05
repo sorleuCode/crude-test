@@ -1,144 +1,117 @@
 import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchMeetings } from "@/store/slices/meetingSlice";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import Layout from "@/components/Layout";
-import type { Meeting } from "@/store/slices/meetingSlice";
+import { Meeting } from "@/store/slices/meetingSlice";
 import api from "@/utils/axios";
-
+import { EditMeetingDialog } from "@/components/ui/EditMeetingDialog";
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Trash2 } from "lucide-react";
+import { MeetingForm } from "@/components/ui/MeetingForm";
 
 const MeetingsPage = () => {
   const dispatch = useAppDispatch();
   const { meetings, status, error } = useAppSelector((state) => state.meeting);
-
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [date, setDate] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     dispatch(fetchMeetings());
   }, [dispatch]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreate = async (data: { title: string; description: string; date: string }) => {
     try {
-      if (editingId) {
-        await api.put(
-          `/meetings/${editingId}`,
-          { title, description, date },
-        );
-        setEditingId(null);
-      } else {
-        await api.post(
-          "/meetings",
-          { title, description, date },
-        );
-      }
+      await api.post("/meetings", data);
       dispatch(fetchMeetings());
-      setTitle("");
-      setDescription("");
-      setDate("");
+      toast({ title: "Meeting Added", description: "The meeting was successfully created!" });
     } catch (err) {
-      console.error(err);
+      toast({ title: "Error", description: "Failed to add meeting.", variant: "destructive" });
+    }
+  };
+
+  const handleUpdate = async (data: Partial<Meeting>) => {
+    try {
+      await api.put(`/meetings/${data._id}`, data);
+      dispatch(fetchMeetings());
+      toast({ title: "Meeting Updated", description: "Changes saved successfully." });
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to update meeting.", variant: "destructive" });
     }
   };
 
   const handleDelete = async (id: string) => {
     try {
-      await api.delete(`/meetings/${id}`, {
-      });
+      await api.delete(`/meetings/${id}`);
       dispatch(fetchMeetings());
+      toast({ title: "Meeting Deleted", description: "It was removed from the list." });
     } catch (err) {
-      console.error(err);
+      toast({ title: "Error", description: "Failed to delete meeting.", variant: "destructive" });
     }
-  };
-
-  const handleEdit = (meeting: any) => {
-    setEditingId(meeting._id);
-    setTitle(meeting.title);
-    setDescription(meeting.description || "");
-    setDate(meeting.date?.slice(0, 16) || "");
   };
 
   return (
     <Layout>
-      <div className="max-w-3xl mx-auto mt-10 p-6">
-        <h2 className="text-2xl font-bold mb-4">
-          {editingId ? "Edit Meeting" : "Add Meeting"}
-        </h2>
+      <div className="max-w-3xl mx-auto mt-10 p-6 space-y-8">
+        <div>
+          <h2 className="text-2xl font-bold mb-4">Add New Meeting</h2>
+          <MeetingForm onSubmit={handleCreate} submitLabel="Add Meeting" />
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mb-6">
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Title"
-            className="w-full px-4 py-2 border rounded"
-            required
-          />
-          <input
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Description"
-            className="w-full px-4 py-2 border rounded"
-          />
-          <input
-            type="datetime-local"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full px-4 py-2 border rounded"
-            required
-          />
-          <Button type="submit">{editingId ? "Update" : "Add"} Meeting</Button>
-          {editingId && (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => {
-                setEditingId(null);
-                setTitle("");
-                setDescription("");
-                setDate("");
-              }}
-            >
-              Cancel
-            </Button>
+        <div>
+          {status === "loading" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="h-[160px] w-full rounded-xl" />
+              ))}
+            </div>
           )}
-        </form>
 
-        {status === "loading" && <p>Loading meetings...</p>}
-        {status === "failed" && <p className="text-red-500">{error}</p>}
+          {status === "failed" && <p className="text-red-500">{error}</p>}
 
-        <ul className="space-y-3">
-          {meetings?.map((meeting: Meeting) => (
-            <li
-              key={meeting._id}
-              className="p-4 border rounded bg-white dark:bg-zinc-800"
-            >
-              <h3 className="font-semibold text-lg">{meeting.title}</h3>
-              <p>{meeting.description}</p>
-              <p className="text-sm text-gray-500">
-                {new Date(meeting.date || "").toLocaleString()}
-              </p>
-              <div className="mt-2 space-x-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleEdit(meeting)}
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleDelete(meeting._id!)}
-                >
-                  Delete
-                </Button>
-              </div>
-            </li>
-          ))}
-        </ul>
+          {status === "succeeded" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {meetings.map((meeting) => (
+                <Card key={meeting._id} className="transition hover:shadow-lg">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xl font-semibold">{meeting.title}</CardTitle>
+                    <CardDescription className="text-muted-foreground">
+                      {new Date(meeting.date || "").toLocaleString()}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="mb-4 text-sm text-muted-foreground">{meeting.description}</p>
+                    <div className="flex gap-2">
+                      <EditMeetingDialog meeting={meeting} onSave={handleUpdate} />
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="icon">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          </AlertDialogHeader>
+                          <p>This action cannot be undone.</p>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(meeting._id!)}>
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </Layout>
   );
