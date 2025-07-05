@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const LoginPage = () => {
@@ -13,6 +13,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState("admin123");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false)
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -35,8 +36,8 @@ const LoginPage = () => {
   return (
     <div className="relative flex items-center justify-center h-screen bg-background text-foreground">
       <div className="absolute top-4 right-4">
-      <ThemeToggle />
-    </div>
+        <ThemeToggle />
+      </div>
       <Card className="w-[380px]">
         <CardHeader>
           <CardTitle>Login</CardTitle>
@@ -51,12 +52,24 @@ const LoginPage = () => {
               required
             />
             <Input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              className="pr-10"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-[40.5%] top-[48%] -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+            >
+              {showPassword ? (
+                <EyeOff className="w-5 h-5" />
+              ) : (
+                <Eye className="w-5 h-5" />
+              )}
+            </button>
 
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
