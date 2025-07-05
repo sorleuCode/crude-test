@@ -1,7 +1,9 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
+const corsOptions = require("./config/cors")
 const dotenv = require("dotenv");
+const bodyParser = require("body-parser")
 const authRoutes = require("./routes/authRoutes");
 const meetingRoutes = require("./routes/meetinRoutes");
 const connectDB = require("./config/db");
@@ -11,14 +13,14 @@ connectDB();
 
 const app = express();
 app.use(
-  cors({
-    origin: "https://crude-client.vercel.app",
-    credentials: true,
-  })
+  cors(corsOptions)
 );
 
-app.use(express.json());
+app.use(cors(corsOptions))
 app.use(cookieParser());
+app.use(bodyParser.json());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.get("/", (req, res) => {
 
   res.send("You are Welcome")
