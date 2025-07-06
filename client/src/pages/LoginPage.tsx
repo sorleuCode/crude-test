@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useToast } from "@/hooks/use-toast";
+
 
 const LoginPage = () => {
   const [email, setEmail] = useState("admin@gmail.com");
@@ -14,6 +16,8 @@ const LoginPage = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const {toast} = useToast()
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -27,6 +31,8 @@ const LoginPage = () => {
     setIsLoading(false);
 
     if (loginUser.fulfilled.match(result)) {
+      toast({ title: "login", description: "Login successful!" });
+
       navigate("/meetings");
     } else {
       setError("Login failed");

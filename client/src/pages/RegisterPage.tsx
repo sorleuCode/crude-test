@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "@/utils/axios";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { registerUser } from "@/store/slices/authSlice";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -8,25 +10,25 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 const RegisterPage = () => {
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const { status, error } = useAppSelector((state) => state.auth);
+
   const [email, setEmail] = useState("admin@gmail.com");
   const [password, setPassword] = useState("admin123");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [localError, setLocalError] = useState("");
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleRegister = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
-    setIsLoading(true);
+    setLocalError("");
 
-    try {
-      await api.post("/auth/register", { email, password });
-      navigate("/login");
-    } catch (err: any) {
-      setError(err?.response?.data?.message || "Registration failed");
-    } finally {
-      setIsLoading(false);
+    const result = await dispatch(registerUser({ email, password }));
+
+    if (registerUser.fulfilled.match(result)) {
+      navigate("/meetings");
+    } else {
+      setLocalError((result.payload as string) || "Registration failed");
     }
   };
 
@@ -61,7 +63,7 @@ const RegisterPage = () => {
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground focus:outline-none"
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
                 tabIndex={-1}
               >
                 {showPassword ? (
@@ -72,8 +74,8 @@ const RegisterPage = () => {
               </button>
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
+            <Button type="submit" className="w-full" disabled={status === "loading"}>
+              {status === "loading" ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Creating...
@@ -83,7 +85,9 @@ const RegisterPage = () => {
               )}
             </Button>
 
-            {error && <p className="text-sm text-red-500">{error}</p>}
+            {(localError || error) && (
+              <p className="text-sm text-red-500">{localError || error}</p>
+            )}
 
             <p className="text-sm">
               Already have an account?{" "}

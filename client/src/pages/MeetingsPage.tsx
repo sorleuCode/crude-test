@@ -1,17 +1,37 @@
-import { useEffect, useState } from "react";
+
+import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { fetchMeetings } from "@/store/slices/meetingSlice";
+import {
+  fetchMeetings,
+  createMeeting,
+  updateMeeting,
+  deleteMeeting,
+  Meeting,
+} from "@/store/slices/meetingSlice";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import Layout from "@/components/Layout";
-import { Meeting } from "@/store/slices/meetingSlice";
-import api from "@/utils/axios";
-import { EditMeetingDialog } from "@/components/ui/EditMeetingDialog";
-import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Trash2 } from "lucide-react";
 import { MeetingForm } from "@/components/ui/MeetingForm";
+import { EditMeetingDialog } from "@/components/ui/EditMeetingDialog";
 
 const MeetingsPage = () => {
   const dispatch = useAppDispatch();
@@ -22,33 +42,35 @@ const MeetingsPage = () => {
     dispatch(fetchMeetings());
   }, [dispatch]);
 
-  const handleCreate = async (data: { title: string; description: string; date: string }) => {
-    try {
-      await api.post("/meetings", data);
-      dispatch(fetchMeetings());
-      toast({ title: "Meeting Added", description: "The meeting was successfully created!" });
-    } catch (err) {
-      toast({ title: "Error", description: "Failed to add meeting.", variant: "destructive" });
+  const handleCreate = async (data: {
+    title: string;
+    description: string;
+    date: string;
+  }) => {
+    const result = await dispatch(createMeeting(data));
+    if (createMeeting.fulfilled.match(result)) {
+      toast({ title: "Meeting Added", description: "Successfully created!" });
+    } else {
+      toast({ title: "Error", description: "Failed to create meeting", variant: "destructive" });
     }
   };
 
   const handleUpdate = async (data: Partial<Meeting>) => {
-    try {
-      await api.put(`/meetings/${data._id}`, data);
-      dispatch(fetchMeetings());
+    if (!data._id) return;
+    const result = await dispatch(updateMeeting({ id: data._id, updatedData: data }));
+    if (updateMeeting.fulfilled.match(result)) {
       toast({ title: "Meeting Updated", description: "Changes saved successfully." });
-    } catch (err) {
-      toast({ title: "Error", description: "Failed to update meeting.", variant: "destructive" });
+    } else {
+      toast({ title: "Error", description: "Failed to update meeting", variant: "destructive" });
     }
   };
 
   const handleDelete = async (id: string) => {
-    try {
-      await api.delete(`/meetings/${id}`);
-      dispatch(fetchMeetings());
-      toast({ title: "Meeting Deleted", description: "It was removed from the list." });
-    } catch (err) {
-      toast({ title: "Error", description: "Failed to delete meeting.", variant: "destructive" });
+    const result = await dispatch(deleteMeeting(id));
+    if (deleteMeeting.fulfilled.match(result)) {
+      toast({ title: "Meeting Deleted", description: "Removed from list." });
+    } else {
+      toast({ title: "Error", description: "Failed to delete meeting", variant: "destructive" });
     }
   };
 
@@ -56,7 +78,7 @@ const MeetingsPage = () => {
     <Layout>
       <div className="max-w-3xl mx-auto mt-10 p-6 space-y-8">
         <div>
-          <h2 className="text-2xl font-bold mb-4">Add New Meeting</h2>
+          <h2 className="text-sm sm:text-xl md:text-2xl font-bold mb-4">Add New Meeting</h2>
           <MeetingForm onSubmit={handleCreate} submitLabel="Add Meeting" />
         </div>
 
